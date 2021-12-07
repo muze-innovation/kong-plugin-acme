@@ -15,6 +15,14 @@ local LetsencryptHandler = {}
 LetsencryptHandler.PRIORITY = 1007
 LetsencryptHandler.VERSION = "0.2.15"
 
+local function mergeDomains(config_domains, custom_domains)
+  local result = {table.unpack(config_domains)}
+  for _, v in pairs(custom_domains) do
+    result[#result + 1] = v
+  end
+  return result
+end
+
 local function build_domain_matcher(domains)
   local domains_plain = {}
   local domains_wildcard = {}
@@ -55,6 +63,7 @@ function LetsencryptHandler:init_worker()
   local worker_id = ngx.worker.id()
   kong.log.info("acme renew timer started on worker ", worker_id)
   ngx.timer.every(86400, client.renew_certificate)
+  custom_domains = {}
 end
 
 function LetsencryptHandler:certificate(conf)
@@ -70,8 +79,9 @@ function LetsencryptHandler:certificate(conf)
 
   host = string.lower(host)
 
+  local domains = mergeDomains(conf.domains, custom_domains)
   -- TODO: cache me
-  local domains_matcher = build_domain_matcher(conf.domains)
+  local domains_matcher = build_domain_matcher(domains)
   if not domains_matcher or not domains_matcher[host] then
     kong.log.debug("ignoring because domain is not in whitelist")
     return
@@ -158,7 +168,8 @@ function LetsencryptHandler:access(conf)
       return
     end
 
-    local domains_matcher = build_domain_matcher(conf.domains)
+    local domains = mergeDomains(conf.domains, custom_domains)
+    local domains_matcher = build_domain_matcher(domains)
     if not domains_matcher or not domains_matcher[kong.request.get_host()] then
       return
     end

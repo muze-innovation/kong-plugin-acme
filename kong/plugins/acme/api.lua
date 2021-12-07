@@ -1,6 +1,7 @@
 local client = require "kong.plugins.acme.client"
 local handler = require "kong.plugins.acme.handler"
 local http = require "resty.http"
+local cjson = require "cjson"
 
 local x509 = require "resty.openssl.x509"
 
@@ -47,6 +48,20 @@ local function parse_certkey(certkey)
     serial_number = bn_to_hex(cert:get_serial_number()),
     pubkey_type = key:get_key_type().sn,
   }
+end
+
+-- Filter disable domains out
+local function filter_domain(custom_host, domain_mapping, domain_mapping_status)
+  local enabled_domains={}
+  for k in pairs(custom_host) do
+    enabled_domains[k] = k
+  end
+  for k in pairs(domain_mapping) do
+    if domain_mapping_status[k] then
+      enabled_domains[k] = k
+    end
+  end
+  return enabled_domains
 end
 
 return {
@@ -171,5 +186,29 @@ return {
       end
       return kong.response.exit(200, { data = parse_certkey(certkey) })
     end,
+  },
+
+  ["/incart-acme/update-domain-mapping"] = {
+    GET = function()
+      local httpc = http.new()
+      local res, err = httpc:request_uri("http://www.incart.co/shared/custom-domain/store-domain.json", {
+        method = "GET"
+      })
+
+      local status_res, err = httpc:request_uri("http://www.incart.co/shared/custom-domain/store-domain-status.json", {
+        method = "GET"
+      })
+
+      local custom_host_res, err = httpc:request_uri("http://www.incart.co/shared/custom-domain/store-by-path.json", {
+        method = "GET"
+      })
+
+      local domain_mapping = cjson.decode(res.body)
+      local domain_mapping_status = cjson.decode(status_res.body)
+      local custom_host = cjson.decode(custom_host_res.body)
+
+      custom_domains = filter_domain(custom_host, domain_mapping, domain_mapping_status)
+      return kong.response.exit(200, { data = custom_domains })
+    end
   },
 }
