@@ -15,6 +15,19 @@ local LetsencryptHandler = {}
 LetsencryptHandler.PRIORITY = 1007
 LetsencryptHandler.VERSION = "0.2.15"
 
+local function dump(o)
+  if type(o) == 'table' then
+    local s = '{ '
+    for k,v in pairs(o) do
+        if type(k) ~= 'number' then k = '"'..k..'"' end
+        s = s .. '['..k..'] = ' .. dump(v) .. ','
+    end
+    return s .. '} '
+  else
+    return tostring(o)
+  end
+end
+
 local function mergeDomains(config_domains, custom_domains)
   local result = {table.unpack(config_domains)}
   for _, v in pairs(custom_domains) do
@@ -169,7 +182,7 @@ function LetsencryptHandler:access(conf)
     end
 
     local domains = mergeDomains(conf.domains, custom_domains)
-    kong.log.debug('🚀 ~ file: handler.lua ~ line 172 ~ domains ', domains)
+    kong.log.debug('🚀 ~ file: handler.lua ~ line 172 ~ domains ', dump(domains))
     local domains_matcher = build_domain_matcher(domains)
     if not domains_matcher or not domains_matcher[kong.request.get_host()] then
       return
