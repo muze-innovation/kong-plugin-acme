@@ -169,6 +169,7 @@ function LetsencryptHandler:access(conf)
     end
 
     local domains = mergeDomains(conf.domains, custom_domains)
+    kong.log.debug('🚀 ~ file: handler.lua ~ line 172 ~ domains ', domains)
     local domains_matcher = build_domain_matcher(domains)
     if not domains_matcher or not domains_matcher[kong.request.get_host()] then
       return
