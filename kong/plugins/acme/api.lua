@@ -191,15 +191,15 @@ return {
   ["/incart-acme/update-domain-mapping"] = {
     GET = function()
       local httpc = http.new()
-      local res, err = httpc:request_uri("http://www.qa.incart.co/shared/custom-domain/store-domain.json", {
+      local res, err = httpc:request_uri("http://www.dev.outcart.co/shared/custom-domain/store-domain.json", {
         method = "GET"
       })
 
-      local status_res, err = httpc:request_uri("http://www.qa.incart.co/shared/custom-domain/store-domain-status.json", {
+      local status_res, err = httpc:request_uri("http://www.dev.outcart.co/shared/custom-domain/store-domain-status.json", {
         method = "GET"
       })
 
-      local custom_host_res, err = httpc:request_uri("http://www.qa.incart.co/shared/custom-domain/store-by-path.json", {
+      local custom_host_res, err = httpc:request_uri("http://www.dev.outcart.co/shared/custom-domain/store-by-path.json", {
         method = "GET"
       })
 
