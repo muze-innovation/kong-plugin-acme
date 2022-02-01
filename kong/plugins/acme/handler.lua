@@ -15,19 +15,6 @@ local LetsencryptHandler = {}
 LetsencryptHandler.PRIORITY = 1007
 LetsencryptHandler.VERSION = "0.2.15"
 
-local function dump(o)
-  if type(o) == 'table' then
-    local s = '{ '
-    for k,v in pairs(o) do
-        if type(k) ~= 'number' then k = '"'..k..'"' end
-        s = s .. '['..k..'] = ' .. dump(v) .. ','
-    end
-    return s .. '} '
-  else
-    return tostring(o)
-  end
-end
-
 local function mergeDomains(config_domains, custom_domains)
   local result = {table.unpack(config_domains)}
   for _, v in pairs(custom_domains) do
