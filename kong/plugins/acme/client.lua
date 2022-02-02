@@ -478,6 +478,32 @@ local function load_renew_hosts(conf)
   return data
 end
 
+local function write_custom_domains(conf, data)
+  local _, st, err = new_storage_adapter(conf)
+  if err then
+    return nil, err
+  end
+
+  local err = st:set('custom_domains', cjson.encode(data))
+  if err then
+    return err
+  end
+end
+
+local function get_custom_domains(conf)
+  local _, st, err = new_storage_adapter(conf)
+  if err then
+    return nil, err
+  end
+
+  local custom_domains, err = st:get('custom_domains')
+  if err or not custom_domains then
+    return {}
+  end
+
+  return cjson.decode(custom_domains)
+end
+
 return {
   new = new,
   create_account = create_account,
@@ -487,6 +513,8 @@ return {
   load_renew_hosts = load_renew_hosts,
   load_certkey = load_certkey,
   load_certkey_cached = load_certkey_cached,
+  write_custom_domains = write_custom_domains,
+  get_custom_domains = get_custom_domains,
 
   -- for test only
   _save_dao = save_dao,

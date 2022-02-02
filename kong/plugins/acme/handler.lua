@@ -1,5 +1,5 @@
 local kong_certificate = require "kong.runloop.certificate"
-local client = require "kong.plugins.acme.client"
+local client = require "kong.plugins.incart-acme.client"
 local ngx_ssl = require "ngx.ssl"
 
 local acme_challenge_path = [[^/\.well-known/acme-challenge/(.+)]]
@@ -15,11 +15,27 @@ local LetsencryptHandler = {}
 LetsencryptHandler.PRIORITY = 1007
 LetsencryptHandler.VERSION = "0.2.15"
 
+local function dump(o)
+  if type(o) == 'table' then
+    local s = '{ '
+    for k,v in pairs(o) do
+        if type(k) ~= 'number' then k = '"'..k..'"' end
+        s = s .. '['..k..'] = ' .. dump(v) .. ','
+    end
+    return s .. '} '
+  else
+    return tostring(o)
+  end
+end
+
 local function mergeDomains(config_domains, custom_domains)
+  kong.log.debug('🚀 ~ file: handler.lua ~ line 83 ~ domains ', dump(custom_domains))
   local result = {table.unpack(config_domains)}
+  kong.log.debug('🚀 ~ file: handler.lua ~ line 83 ~ result ', dump(result))
   for _, v in pairs(custom_domains) do
     result[#result + 1] = v
   end
+  kong.log.debug('🚀 ~ file: handler.lua ~ line 83 ~ result end ', dump(result))
   return result
 end
 
@@ -63,7 +79,6 @@ function LetsencryptHandler:init_worker()
   local worker_id = ngx.worker.id()
   kong.log.info("acme renew timer started on worker ", worker_id)
   ngx.timer.every(86400, client.renew_certificate)
-  custom_domains = {}
 end
 
 function LetsencryptHandler:certificate(conf)
@@ -79,6 +94,7 @@ function LetsencryptHandler:certificate(conf)
 
   host = string.lower(host)
 
+  local custom_domains = client.get_custom_domains(conf)
   local domains = mergeDomains(conf.domains, custom_domains)
   -- TODO: cache me
   local domains_matcher = build_domain_matcher(domains)
@@ -168,6 +184,7 @@ function LetsencryptHandler:access(conf)
       return
     end
 
+    local custom_domains = client.get_custom_domains(conf)
     local domains = mergeDomains(conf.domains, custom_domains)
     local domains_matcher = build_domain_matcher(domains)
     if not domains_matcher or not domains_matcher[kong.request.get_host()] then

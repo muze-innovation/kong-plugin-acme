@@ -1,5 +1,5 @@
-local client = require "kong.plugins.acme.client"
-local handler = require "kong.plugins.acme.handler"
+local client = require "kong.plugins.incart-acme.client"
+local handler = require "kong.plugins.incart-acme.handler"
 local http = require "resty.http"
 local cjson = require "cjson"
 
@@ -11,7 +11,7 @@ local function find_plugin()
       return nil, err
     end
 
-    if plugin.name == "acme" then
+    if plugin.name == "incart-acme" then
       return plugin
     end
   end
@@ -190,6 +190,13 @@ return {
 
   ["/incart-acme/update-domain-mapping"] = {
     GET = function()
+      local plugin, err = find_plugin()
+      if err then
+        return kong.response.exit(500, { message = err })
+      elseif not plugin then
+        return kong.response.exit(404)
+      end
+
       local httpc = http.new()
       local res, err = httpc:request_uri("http://dev.outcart.co/shared/custom-domain/store-domain.json", {
         method = "GET"
@@ -207,7 +214,8 @@ return {
       local domain_mapping_status = cjson.decode(status_res.body)
       local custom_host = cjson.decode(custom_host_res.body)
 
-      custom_domains = filter_domain(custom_host, domain_mapping, domain_mapping_status)
+      local custom_domains = filter_domain(custom_host, domain_mapping, domain_mapping_status)
+      client.write_custom_domains(plugin.config, custom_domains)
       return kong.response.exit(200, { data = custom_domains })
     end
   },

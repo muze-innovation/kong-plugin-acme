@@ -44,7 +44,7 @@ local VAULT_STORAGE_SCHEMA = {
 }
 
 local schema = {
-  name = "acme",
+  name = "incart-acme",
   fields = {
     -- global plugin only
     { consumer = typedefs.no_consumer },
