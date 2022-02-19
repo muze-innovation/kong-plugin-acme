@@ -82,6 +82,9 @@ local schema = {
           type = "number",
           default = 14,
         }, },
+        { root_domain = typedefs.host {
+          required = true,
+        } },
         { domains = typedefs.hosts },
         { fail_backoff_minutes = {
           type = "number",

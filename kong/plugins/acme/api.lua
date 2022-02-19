@@ -196,17 +196,19 @@ return {
       elseif not plugin then
         return kong.response.exit(404)
       end
+      local conf = plugin.config
 
       local httpc = http.new()
-      local res, err = httpc:request_uri("http://dev.outcart.co/shared/custom-domain/store-domain.json", {
+      local base_url = "http://" .. conf.root_domain
+      local res, err = httpc:request_uri(base_url .. "/shared/custom-domain/store-domain.json", {
         method = "GET"
       })
 
-      local status_res, err = httpc:request_uri("http://dev.outcart.co/shared/custom-domain/store-domain-status.json", {
+      local status_res, err = httpc:request_uri(base_url .. "/shared/custom-domain/store-domain-status.json", {
         method = "GET"
       })
 
-      local custom_host_res, err = httpc:request_uri("http://dev.outcart.co/shared/custom-domain/store-by-path.json", {
+      local custom_host_res, err = httpc:request_uri(base_url .. "/shared/custom-domain/store-by-path.json", {
         method = "GET"
       })
 
@@ -215,7 +217,7 @@ return {
       local custom_host = cjson.decode(custom_host_res.body)
 
       local custom_domains = filter_domain(custom_host, domain_mapping, domain_mapping_status)
-      client.write_custom_domains(plugin.config, custom_domains)
+      client.write_custom_domains(conf, custom_domains)
       return kong.response.exit(200, { data = custom_domains })
     end
   },

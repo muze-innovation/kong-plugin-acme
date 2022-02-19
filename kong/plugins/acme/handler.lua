@@ -28,10 +28,10 @@ local function dump(o)
   end
 end
 
-local function mergeDomains(config_domains, custom_domains)
-  kong.log.debug('🚀 ~ file: handler.lua ~ line 83 ~ domains ', dump(custom_domains))
-  local result = {table.unpack(config_domains)}
-  kong.log.debug('🚀 ~ file: handler.lua ~ line 83 ~ result ', dump(result))
+local function mergeDomains(conf, custom_domains)
+  local root_domain = conf.root_domain
+  local config_domains = conf.domains or {}
+  local result = {root_domain, table.unpack(config_domains)}
   for _, v in pairs(custom_domains) do
     result[#result + 1] = v
   end
@@ -95,7 +95,7 @@ function LetsencryptHandler:certificate(conf)
   host = string.lower(host)
 
   local custom_domains = client.get_custom_domains(conf)
-  local domains = mergeDomains(conf.domains, custom_domains)
+  local domains = mergeDomains(conf, custom_domains)
   -- TODO: cache me
   local domains_matcher = build_domain_matcher(domains)
   if not domains_matcher or not domains_matcher[host] then
@@ -185,7 +185,7 @@ function LetsencryptHandler:access(conf)
     end
 
     local custom_domains = client.get_custom_domains(conf)
-    local domains = mergeDomains(conf.domains, custom_domains)
+    local domains = mergeDomains(conf, custom_domains)
     local domains_matcher = build_domain_matcher(domains)
     if not domains_matcher or not domains_matcher[kong.request.get_host()] then
       return
